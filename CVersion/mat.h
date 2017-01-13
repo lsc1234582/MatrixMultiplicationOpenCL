@@ -5,7 +5,8 @@
  */
 #include <sys/types.h>
 
-int mat4_mult(const float *mat1, const float *mat2, float *res);
+int mat4_mult(const float *mat1, const float *mat2, const size_t dim1,
+        const size_t dim2, float *res);
 
 void print_mat(const float *mat, size_t row, size_t col, int orient);
 

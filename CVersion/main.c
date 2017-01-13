@@ -2,25 +2,25 @@
 #include <stdio.h>
 
 int main() {
-    float mat[16], vec[4], result[4];
+    float mat1[4], mat2[12], result[3];
     int i;
-    // Initialise mat and vec
-    for (i = 0; i < 16; ++i) {
-        mat[i] = i * 2.0f;
-    }
+    // Initialise mat1 and mat2
     for (i = 0; i < 4; ++i) {
-        vec[i] = i * 3.0f;
+        mat1[i] = i * 2.0f;
+    }
+    for (i = 0; i < 12; ++i) {
+        mat2[i] = i * 3.0f;
     }
 
-    mat4_mult(mat, vec, result);
+    mat4_mult(mat1, mat2, 14, 43, result);
 
-    print_mat(mat, 4, 4, 1);
+    print_mat(mat1, 1, 4, 1);
     printf("\n");
     printf("\n");
-    print_mat(vec, 4, 1, 1);
+    print_mat(mat2, 4, 3, -1);
     printf("\n");
     printf("\n");
-    print_mat(result, 4, 1, -1);
+    print_mat(result, 4, 3, -1);
     printf("\n");
 
     return 0;

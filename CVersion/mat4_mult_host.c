@@ -1,7 +1,6 @@
-// TODO: Extends to matrix-matrix multiplication
 // TODO: Extends to general matrix multiplication
 #define PROGRAM_FILE "mat4_mult.cl"
-#define KERNEL_FUNC "matvec_mult"
+#define KERNEL_FUNC "mat4_mult"
 
 #include "mat.h"
 #include <stdlib.h>
@@ -13,7 +12,19 @@
 #include <CL/cl.h>
 #endif
 
-int mat4_mult(const float *mat1, const float *mat2, float *res) {
+int mat4_mult(const float *mat1, const float *mat2, const size_t dim1, 
+        const size_t dim2, float *res) {
+    /* Check if dimensions agree */
+    size_t row1 = (size_t) dim1/10;
+    size_t col1 = dim1 - row1 * 10;
+    size_t row2 = (size_t) dim2/10;
+    size_t col2 = dim2 - row2 * 10;
+    if (col1 != row2) {
+        perror("Wrong matrix dimensions;");
+        return -1;
+    }
+    printf("%lu, %lu\n%lu, %lu\n", row1, col1, row2, col2);
+
     cl_platform_id platform;
     cl_device_id device;
     cl_context context;
@@ -26,9 +37,9 @@ int mat4_mult(const float *mat1, const float *mat2, float *res) {
     char *program_buffer, *program_log;
     size_t program_size;
     cl_kernel kernel;
-    size_t work_units_per_kernel;
+    size_t work_units_per_kernel[2];
 
-    cl_mem mat1_buff, mat2_buff, res_buff;
+    cl_mem mat1_buff, mat2_buff, col2_buff, res_buff;
     
     /*
      * Set platform & device & context
@@ -88,24 +99,31 @@ int mat4_mult(const float *mat1, const float *mat2, float *res) {
     queue = clCreateCommandQueue(context, device, 0, &err);
 
     mat1_buff = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-            sizeof(float)*16, (void *) mat1, &err);
+            sizeof(float)*row1*col1, (void *) mat1, &err);
     mat2_buff = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-            sizeof(float)*4, (void *) mat2, &err);
+            sizeof(float)*row2*col2, (void *) mat2, &err);
+    col2_buff = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+            sizeof(col2), (void *) &col2, &err);
     res_buff = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-            sizeof(float)*4, (void *) res, &err);
+            sizeof(float)*row1*col2, (void *) res, &err);
 
     /* Set kernel arguments */
     clSetKernelArg(kernel, 0, sizeof(cl_mem), &mat1_buff);
     clSetKernelArg(kernel, 1, sizeof(cl_mem), &mat2_buff);
-    clSetKernelArg(kernel, 2, sizeof(cl_mem), &res_buff);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), &col2_buff);
+    clSetKernelArg(kernel, 3, sizeof(cl_mem), &res_buff);
 
     /* Execute kernel */
-    work_units_per_kernel = 4;
-    clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &work_units_per_kernel, 
-            NULL, 0, NULL, NULL);
+    work_units_per_kernel[0] = row1;
+    work_units_per_kernel[1] = col2;
+    size_t global_work_offset[2];
+    global_work_offset[0] = 0;
+    global_work_offset[1] = 0;
+    clEnqueueNDRangeKernel(queue, kernel, 2, (size_t *) &global_work_offset, 
+            (size_t *) &work_units_per_kernel, NULL, 0, NULL, NULL);
     
-    clEnqueueReadBuffer(queue, res_buff, CL_TRUE, 0, sizeof(float)*4, res,
-            0, NULL, NULL);
+    clEnqueueReadBuffer(queue, res_buff, CL_TRUE, 0, sizeof(float)*row1*col2, 
+            res, 0, NULL, NULL);
 
     clReleaseMemObject(mat1_buff);
     clReleaseMemObject(mat2_buff);
