@@ -1,2 +1,2 @@
 # MatrixProductOpenCL
-A matrix product function implemented in C with OpenCL
+A matrix multiplication function implemented in C with OpenCL
